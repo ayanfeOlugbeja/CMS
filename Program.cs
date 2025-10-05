@@ -49,12 +49,20 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Database
+// builder.Services.AddDbContext<AppDbContext>(options =>
+// {
+//     options.UseSqlServer(
+//         builder.Configuration.GetConnectionString("DefaultConnection")
+//         ?? throw new InvalidOperationException("Sorry connection not found.")
+//     );
+// });
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("Sorry connection not found.")
-    );
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    // Use PostgreSQL instead of SQL Server
+    options.UseNpgsql(connectionString);
 });
 
 // Repositories
