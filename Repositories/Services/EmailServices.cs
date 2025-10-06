@@ -48,11 +48,12 @@ namespace CMS.Repositories.Services // ✅ must match the folder structure
     {
         private readonly string _apiKey;
 
-        public SendGridEmailService()
-        {
-            _apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY") 
-                      ?? throw new Exception("SendGrid API key not found in environment variables.");
-        }
+      public SendGridEmailService(IConfiguration configuration)
+{
+    _apiKey = configuration["SendGrid:ApiKey"] 
+              ?? Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
+              ?? throw new Exception("SendGrid API key not found in configuration or environment variables.");
+}
 
         public async void SendEmail(string to, string subject, string body)
         {
