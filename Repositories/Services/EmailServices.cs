@@ -59,7 +59,7 @@ namespace CMS.Repositories.Services // ✅ must match the folder structure
             try
             {
                 var client = new SendGridClient(_apiKey);
-                var from = new EmailAddress("no-reply@cmsapp.com", "CMS App");
+                var from = new EmailAddress("ogunbanwofemi2000@gmail.com", "CMS App");
                 var toEmail = new EmailAddress(to);
                 var msg = MailHelper.CreateSingleEmail(from, toEmail, subject, body, body);
                 var response = await client.SendEmailAsync(msg);
