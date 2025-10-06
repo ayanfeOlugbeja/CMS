@@ -68,7 +68,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IUserAccount, UserAccountRepository>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+
 builder.Services.AddScoped<IBaseRepository<TownDto, CreateTownDto, UpdateTownDto>, TownRepository>();
 builder.Services.AddScoped<IBaseRepository<BranchDto, CreateBranchDto, UpdateBranchDto>, BranchRepository>();
 builder.Services.AddScoped<IBaseRepository<DepartmentDto, CreateDepartmentDto, UpdateDepartmentDto>, DepartmentRepository>();
