@@ -22,3 +22,5 @@ bld/
 # Others
 *.vsidx
 *.log
+
+appsettings.json
