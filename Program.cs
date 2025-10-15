@@ -64,6 +64,10 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IBaseRepository<TownDto, CreateTownDto, UpdateTownDto>, TownRepository>();
 builder.Services.AddScoped<IBaseRepository<BranchDto, CreateBranchDto, UpdateBranchDto>, BranchRepository>();
 builder.Services.AddScoped<IBaseRepository<DepartmentDto, CreateDepartmentDto, UpdateDepartmentDto>, DepartmentRepository>();
+builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IJobRepository, JobRepository>();
+
 
 builder.Services.AddScoped<IJwtServices, JwtService>();
 

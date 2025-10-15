@@ -85,6 +85,10 @@ namespace CMS.Repositories.Services
                 $"Hello {applicationUser.Fullname},\n\nYour OTP is: {otp}\n\nThis code will expire in 10 minutes.");
 
             return new GeneralResponse(true, "Account created! Please verify your email using the OTP.");
+
+           
+
+
         }
 
         //  OTP verification
@@ -102,8 +106,127 @@ namespace CMS.Repositories.Services
             user.OtpExpiryTime = null;
 
             await _context.SaveChangesAsync();
+
+            // Send success email after verification
+            _emailService.SendEmail(
+                user.Email,
+                "Registration Successful",
+                $"Hello {user.Fullname}, your registration on CMS was successful!"
+            );
+
             return true;
         }
+
+        public async Task<bool> ResendOtpAsync(string email)
+        {
+            var user = await _context.ApplicationUsers.FirstOrDefaultAsync(x => x.Email == email);
+            if (user == null) return false;
+
+            var newOtp = new Random().Next(100000, 999999).ToString();
+            user.EmailVerificationCode = newOtp;
+            user.OtpExpiryTime = DateTime.UtcNow.AddMinutes(10);
+
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendEmailAsync(user.Email, "Your New Verification Code",
+                $"Hello {user.Fullname},\n\nYour new OTP is: {newOtp}\n\nThis code will expire in 10 minutes.");
+
+            return true;
+        }
+
+        // Change Password
+        public async Task<GeneralResponse> ChangePasswordAsync(ChangePasswordDto model)
+        {
+            var user = await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+
+            if (user == null)
+                return new GeneralResponse(false, "User not found.");
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.Password))
+                return new GeneralResponse(false, "Current password is incorrect.");
+
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+            await _context.SaveChangesAsync();
+
+
+            _emailService.SendEmail(user.Email, "Password Changed Successfully",
+                $"Hi {user.Fullname},\n\nYour CMS account password was changed successfully.\nIf you didn’t request this, please contact support immediately.");
+
+            return new GeneralResponse(true, "Password changed successfully.");
+        }
+
+        //  Forgot Password
+        public async Task<GeneralResponse> ForgotPasswordAsync(ForgotPasswordDto model)
+        {
+            var user = await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+            if (user == null)
+                return new GeneralResponse(false, "User not found.");
+
+            // Generate OTP for reset (6-digit code)
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // You could also create a token if you want reset via link
+            var token = Guid.NewGuid().ToString("N");
+
+            user.PasswordResetOtp = otp;
+            user.PasswordResetToken = token;
+            user.OtpExpiryTime = DateTime.UtcNow.AddMinutes(15);
+
+            await _context.SaveChangesAsync();
+
+            // Send both OTP and link via email
+            var resetLink = $"https://yourfrontend.com/reset-password?token={token}&email={user.Email}";
+            var body = $@"
+        Hello {user.Fullname},<br><br>
+        You requested to reset your password.<br><br>
+        <b>OTP:</b> {otp} (valid for 15 minutes)<br><br>
+        Or click this link to reset via browser:<br>
+        <a href='{resetLink}'>Reset Password</a><br><br>
+        If you did not request this, please ignore this email.";
+
+            _emailService.SendEmail(user.Email, "Password Reset Request", body);
+
+            return new GeneralResponse(true, "Password reset link and OTP sent to your email.");
+        }
+
+
+
+        public async Task<GeneralResponse> ResetPasswordAsync(ResetPasswordDto model)
+        {
+            var user = await _context.ApplicationUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+            if (user == null)
+                return new GeneralResponse(false, "User not found.");
+
+            // Validate OTP or token
+            if ((user.PasswordResetOtp != model.OtpOrToken && user.PasswordResetToken != model.OtpOrToken)
+                || user.OtpExpiryTime < DateTime.UtcNow)
+            {
+                return new GeneralResponse(false, "Invalid or expired reset code/link.");
+            }
+
+            // Update password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+
+            // Clear reset data
+            user.PasswordResetOtp = null;
+            user.PasswordResetToken = null;
+            user.OtpExpiryTime = null;
+
+            await _context.SaveChangesAsync();
+
+            // Notify user
+            _emailService.SendEmail(user.Email, "Password Reset Successful",
+                $"Hello {user.Fullname},\n\nYour password was successfully reset.");
+
+            return new GeneralResponse(true, "Password reset successful.");
+        }
+
+
+
+
+
 
         //  Login
         public async Task<LoginResponse> SignInAsync(Login user)

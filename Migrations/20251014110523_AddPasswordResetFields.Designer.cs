@@ -4,6 +4,7 @@ using CMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014110523_AddPasswordResetFields")]
+    partial class AddPasswordResetFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,129 +158,6 @@ namespace CMS.Migrations
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("CMS.Entities.Job", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ClosingDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("EmploymentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("PostedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("Salary")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Jobs");
-                });
-
-            modelBuilder.Entity("CMS.Entities.Permission", b =>
-                {
-                    b.Property<int>("PermissionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PermissionId"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ModuleName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SubModuleName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("PermissionId");
-
-                    b.ToTable("Permissions");
-                });
-
-            modelBuilder.Entity("CMS.Entities.Role", b =>
-                {
-                    b.Property<int>("RoleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmployeeCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RoleDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RoleName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("RoleId");
-
-                    b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("CMS.Entities.RolePermission", b =>
-                {
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PermissionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("RoleId", "PermissionId");
-
-                    b.HasIndex("PermissionId");
-
-                    b.ToTable("RolePermissions");
-                });
-
             modelBuilder.Entity("CMS.Entities.SystemRole", b =>
                 {
                     b.Property<int>("Id")
@@ -363,25 +243,6 @@ namespace CMS.Migrations
                     b.Navigation("Town");
                 });
 
-            modelBuilder.Entity("CMS.Entities.RolePermission", b =>
-                {
-                    b.HasOne("CMS.Entities.Permission", "Permission")
-                        .WithMany()
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CMS.Entities.Role", "Role")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("Role");
-                });
-
             modelBuilder.Entity("CMS.Entities.UserRole", b =>
                 {
                     b.HasOne("CMS.Entities.SystemRole", "Role")
@@ -409,11 +270,6 @@ namespace CMS.Migrations
             modelBuilder.Entity("CMS.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
-                });
-
-            modelBuilder.Entity("CMS.Entities.Role", b =>
-                {
-                    b.Navigation("RolePermissions");
                 });
 
             modelBuilder.Entity("CMS.Entities.Town", b =>
