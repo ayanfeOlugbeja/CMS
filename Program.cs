@@ -3,6 +3,8 @@ using CMS.DTOs;
 using CMS.Helpers;
 using CMS.Repositories.Interfaces;
 using CMS.Repositories.Services;
+using CMS.Middleware;
+using CMS.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,42 +13,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "CMS API",
-        Version = "v1"
-    });
 
-    // Add JWT support in Swagger
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter 'Bearer {token}'"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
+// Enhanced Swagger configuration
+builder.Services.AddEnhancedSwagger();
+
+// CORS configuration
+builder.Services.AddCorsPolicy(builder.Configuration);
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -67,6 +42,8 @@ builder.Services.AddScoped<IBaseRepository<DepartmentDto, CreateDepartmentDto, U
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
+builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
+builder.Services.AddScoped<ISubModuleRepository, SubModuleRepository>();
 
 
 builder.Services.AddScoped<IJwtServices, JwtService>();
@@ -106,13 +83,23 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 
+// Global exception handling middleware (should be first)
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "CMS API v1");
+        c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
+    });
 }
 
 app.UseHttpsRedirection();
+
+// CORS
+app.UseCors("FrontendPolicy");
 
 // Order matters
 app.UseAuthentication();

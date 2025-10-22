@@ -15,50 +15,114 @@ namespace CMS.Repositories.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<Role>> GetAllAsync()
+        public async Task<List<RoleDto>> GetAllRolesAsync()
         {
-            return await _context.Roles.ToListAsync();
+            return await _context.Roles
+                .Include(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                .Select(r => new RoleDto
+                {
+                    RoleId = r.RoleId,
+                    RoleName = r.RoleName,
+                    Permissions = r.RolePermissions.Select(rp => new PermissionDto
+                    {
+                        Id = rp.Permission.PermissionId,
+                        ModuleName = rp.Permission.ModuleName,
+                        SubModuleName = rp.Permission.SubModuleName,
+                        Description = rp.Permission.Description
+                    }).ToList()
+                })
+                .ToListAsync();
         }
 
-        public async Task<Role?> GetByIdAsync(int id)
+        public async Task<RoleDto?> GetRoleByIdAsync(int id)
         {
-            return await _context.Roles.FindAsync(id);
+            var role = await _context.Roles
+                .Include(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(r => r.RoleId == id);
+
+            if (role == null) return null;
+
+            return new RoleDto
+            {
+                RoleId = role.RoleId,
+                RoleName = role.RoleName,
+                Permissions = role.RolePermissions.Select(rp => new PermissionDto
+                {
+                    Id = rp.Permission.PermissionId,
+                    ModuleName = rp.Permission.ModuleName,
+                    SubModuleName = rp.Permission.SubModuleName,
+                    Description = rp.Permission.Description
+                }).ToList()
+            };
         }
 
-        public async Task<Role> CreateAsync(RoleDto dto)
+        public async Task<RoleDto> CreateRoleAsync(RoleCreateUpdateDto dto)
         {
             var role = new Role
             {
                 RoleName = dto.RoleName,
-                RoleDescription = dto.RoleDescription,
-                CompanyId = dto.CompanyId,
-                EmployeeCount = dto.EmployeeCount,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                RoleDescription = dto.RoleDescription
             };
+
+            // Add permissions
+            role.RolePermissions = dto.PermissionIds
+                .Select(pid => new RolePermission
+                {
+                    PermissionId = pid,
+                    Role = role
+                }).ToList();
 
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
-            return role;
+
+            // Return DTO
+            return new RoleDto
+            {
+                RoleId = role.RoleId,
+                RoleName = role.RoleName,
+                Permissions = await _context.Permissions
+                    .Where(p => dto.PermissionIds.Contains(p.PermissionId))
+                    .Select(p => new PermissionDto
+                    {
+                        Id = p.PermissionId,
+                        ModuleName = p.ModuleName,
+                        SubModuleName = p.SubModuleName,
+                        Description = p.Description
+                    })
+                    .ToListAsync()
+            };
         }
 
-        public async Task<Role?> UpdateAsync(int id, RoleDto dto)
+        public async Task<RoleDto?> UpdateRoleAsync(int id, RoleCreateUpdateDto dto)
         {
-            var role = await _context.Roles.FindAsync(id);
+            var role = await _context.Roles
+                .Include(r => r.RolePermissions)
+                .FirstOrDefaultAsync(r => r.RoleId == id);
+
             if (role == null) return null;
 
+            // Update basic info
             role.RoleName = dto.RoleName;
             role.RoleDescription = dto.RoleDescription;
-            role.CompanyId = dto.CompanyId;
-            role.EmployeeCount = dto.EmployeeCount;
-            role.UpdatedAt = DateTime.UtcNow;
 
-            _context.Roles.Update(role);
+            // Update permissions
+            _context.RolePermissions.RemoveRange(role.RolePermissions);
+            role.RolePermissions = dto.PermissionIds
+                .Select(pid => new RolePermission
+                {
+                    PermissionId = pid,
+                    RoleId = role.RoleId
+                }).ToList();
+
             await _context.SaveChangesAsync();
-            return role;
+
+            // Return updated DTO
+            return await GetRoleByIdAsync(id);
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteRoleAsync(int id)
         {
             var role = await _context.Roles.FindAsync(id);
             if (role == null) return false;
