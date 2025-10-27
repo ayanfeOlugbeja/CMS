@@ -48,6 +48,18 @@ namespace CMS.Controllers
             return Ok(new { message = "Email verified successfully" });
         }
 
+        [HttpPost("resend-otp")]
+        public async Task<IActionResult> ResendOtp([FromBody] ResendOtpDto dto)
+        {
+            var sent = await _userAccount.ResendOtpAsync(dto.Email);
+            if (!sent)
+                return BadRequest(new { message = "User not found" });
+
+            return Ok(new { message = "OTP resent successfully" });
+        }
+
+
+
         // Login endpoint -> returns JWT
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] Login user)
@@ -69,5 +81,47 @@ namespace CMS.Controllers
             });
 
         }
+
+        // Change Password endpoint
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            if (model == null)
+                return BadRequest(new { message = "Invalid request body" });
+
+            var result = await _userAccount.ChangePasswordAsync(model);
+
+            if (!result.Flag)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(new { message = result.Message });
+        }
+
+        // Forgot Password
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var result = await _userAccount.ForgotPasswordAsync(model);
+            if (!result.Flag)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(new { message = result.Message });
+        }
+
+
+        // Reset Password (via OTP or link)
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            var result = await _userAccount.ResetPasswordAsync(model);
+            if (!result.Flag)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(new { message = result.Message });
+        }
+
+
+
+
     }
 }
